@@ -1,3 +1,6 @@
+# !!!Experimental Fork!!!
+Command I use: python remove_instagram_filter_ifrnet.py --input images/examples/IMG_7066.jpg --output output_unfiltered.jpg
+
 # Instagram Filter Removal on Fashionable Images
 
 ![][results]
