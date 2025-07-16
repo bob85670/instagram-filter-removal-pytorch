@@ -4,10 +4,10 @@ import torchvision.models as models
 
 
 class VGG16FeatLayer(nn.Module):
-    def __init__(self, vgg16):
+    def __init__(self, vgg16, device='cuda' if torch.cuda.is_available() else 'cpu'):
         super(VGG16FeatLayer, self).__init__()
         self.vgg16 = vgg16.eval()
-        self.mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1).cuda()
+        self.mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1).to(device)
 
     def forward(self, x):
         out = {}

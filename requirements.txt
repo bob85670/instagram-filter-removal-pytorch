@@ -10,3 +10,5 @@ gradio>=1.6.4
 seaborn>=0.11.0
 Pillow>=8.2.0
 scikit_learn>=0.24.1
+wandb
+lpips

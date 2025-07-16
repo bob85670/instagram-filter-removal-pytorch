@@ -7,7 +7,7 @@ from modules.blocks import DestyleResBlock, Destyler, ResBlock
 
 
 class IFRNet(BaseNetwork):
-    def __init__(self, base_n_channels, destyler_n_channels):
+    def __init__(self, base_n_channels, destyler_n_channels=32):  # Changed default to 32 to match checkpoint
         super(IFRNet, self).__init__()
         self.destyler = Destyler(in_features=32768, num_features=destyler_n_channels)  # from vgg features
 
@@ -69,11 +69,8 @@ class MLP(nn.Module):
             nn.MaxPool2d(2),
             nn.Conv2d(base_n_channels * 4, base_n_channels * 2, kernel_size=3, stride=1, padding=1),
             nn.MaxPool2d(2),
-            # nn.Conv2d(base_n_channels * 2, base_n_channels * 1, kernel_size=3, stride=1, padding=1),
-            # nn.MaxPool2d(2),
             Flatten(),
             nn.Linear(base_n_channels * 8 * 8 * 2, num_class),
-            # nn.Softmax(dim=-1)
         )
 
     def forward(self, x):
@@ -82,24 +79,13 @@ class MLP(nn.Module):
 
 class Flatten(nn.Module):
     def forward(self, input):
-        """
-        Note that input.size(0) is usually the batch size.
-        So what it does is that given any input with input.size(0) # of batches,
-        will flatten to be 1 * nb_elements.
-        """
         batch_size = input.size(0)
         out = input.view(batch_size, -1)
-        return out  # (batch_size, *size)
+        return out
 
 
 class Discriminator(BaseNetwork):
     def __init__(self, base_n_channels):
-        """
-        img_size : (int, int, int)
-            Height and width must be powers of 2.  E.g. (32, 32, 1) or
-            (64, 128, 3). Last number indicates number of channels, e.g. 1 for
-            grayscale or 3 for RGB
-        """
         super(Discriminator, self).__init__()
 
         self.image_to_features = nn.Sequential(
@@ -111,8 +97,6 @@ class Discriminator(BaseNetwork):
             nn.LeakyReLU(0.2, inplace=True),
             spectral_norm(nn.Conv2d(2 * base_n_channels, 4 * base_n_channels, 5, 2, 2)),
             nn.LeakyReLU(0.2, inplace=True),
-            # spectral_norm(nn.Conv2d(4 * base_n_channels, 4 * base_n_channels, 5, 2, 2)),
-            # nn.LeakyReLU(0.2, inplace=True),
             spectral_norm(nn.Conv2d(4 * base_n_channels, 8 * base_n_channels, 5, 1, 1)),
             nn.LeakyReLU(0.2, inplace=True),
         )
@@ -147,9 +131,10 @@ class PatchDiscriminator(Discriminator):
 
 if __name__ == '__main__':
     import torchvision
-    ifrnet = IFRNet(32, 128).cuda()
+    from torchvision.models import VGG16_Weights
+    ifrnet = IFRNet(32, 32).cuda()  # Changed destyler_n_channels to 32
     x = torch.rand((2, 3, 256, 256)).cuda()
-    vgg16 = torchvision.models.vgg16(pretrained=True).features.eval().cuda()
+    vgg16 = torchvision.models.vgg16(weights=VGG16_Weights.IMAGENET1K_V1).features.eval().cuda()
     with torch.no_grad():
         vgg_feat = vgg16(x)
     output, aux_out = ifrnet(x, vgg_feat)
@@ -163,4 +148,3 @@ if __name__ == '__main__':
     patch_disc = PatchDiscriminator(32).cuda()
     p_d_out = patch_disc(output)
     print(p_d_out.size())
-

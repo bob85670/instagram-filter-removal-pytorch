@@ -13,7 +13,7 @@ from torch.utils import data
 from datasets.transforms import *
 import torchvision.models as models
 import torchvision.transforms as T
-from lpips_pytorch import lpips
+from lpips import LPIPS
 
 from datasets.iffi import IFFIDataset
 from modeling.build import build_model
